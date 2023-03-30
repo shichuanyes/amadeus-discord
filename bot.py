@@ -11,6 +11,8 @@ from pixivpy_async import AppPixivAPI
 
 CONFIG_NAME: str = "config.json"
 
+MAX_MSG_LENGTH: int = 2000
+
 TOKEN: str = ""
 REFRESH_TOKEN: str = ""
 API_KEY: str = ""
@@ -23,7 +25,7 @@ history: Dict[int, List[Dict[str, str]]] = dict()
 
 @bot.event
 async def on_ready():
-    await api.login(refresh_token=REFRESH_TOKEN)
+    # await api.login(refresh_token=REFRESH_TOKEN)
     openai.api_key = API_KEY
     print(f"We have logged in as {bot.user}")
 
@@ -77,13 +79,14 @@ async def pixiv(
 
 @bot.slash_command(
     name="chat",
-    description="Chat with ChatGPT (GPT-3.5-Turbo)"
+    description="Chat with ChatGPT (GPT-4)"
 )
 @option("message", required=True)
 async def chat(
         ctx: discord.ApplicationContext,
         message: str
 ):
+    await ctx.defer()
     messages = [
         {
             "role": "system",
@@ -94,12 +97,14 @@ async def chat(
             "content": message
         }
     ]
-    completion = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=messages)
+    completion = openai.ChatCompletion.create(model="gpt-4", messages=messages)
     response = completion["choices"][0]["message"]["content"]
     messages.append({"role": "assistant", "content": response})
-    interaction = await ctx.respond(response)
-    original_response = await interaction.original_response()
-    history[original_response.id] = messages
+    # interaction = await ctx.respond(response)
+    # original_response = await interaction.original_response()
+    # history[original_response.id] = messages
+    message: discord.WebhookMessage = await ctx.respond(response)
+    history[message.id] = messages
 
 
 @bot.event
@@ -109,11 +114,13 @@ async def on_message(
     if message.reference and message.reference.message_id in history:
         messages = history[message.reference.message_id]
         messages.append({"role": "user", "content": message.content})
-        completion = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=messages)
+        completion = openai.ChatCompletion.create(model="gpt-4", messages=messages)
         response = completion["choices"][0]["message"]["content"]
         messages.append({"role": "assistant", "content": response})
-        reply = await message.reply(response)
-        history[reply.id] = messages
+
+        for i in range(0, len(response), MAX_MSG_LENGTH):
+            reply = await message.reply(response[i:i + MAX_MSG_LENGTH])
+            history[reply.id] = messages
 
 
 @bot.event
@@ -146,7 +153,7 @@ if __name__ == "__main__":
     REFRESH_TOKEN = config["refreshToken"]
     if "apiKey" not in config or len(config['apiKey']) == 0:
         config["apiKey"] = input("OpenAI API key not found! Please input API key: ")
-    REFRESH_TOKEN = config["apiKey"]
+    API_KEY = config["apiKey"]
 
     bot.run(TOKEN)
 
