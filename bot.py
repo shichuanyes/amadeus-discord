@@ -20,7 +20,7 @@ API_KEY: str = ""
 api = AppPixivAPI()
 bot = discord.Bot()
 
-history: Dict[int, List[Dict[str, str]]] = dict()
+history: Dict[int, str] = dict()
 
 
 @bot.event
@@ -104,7 +104,7 @@ async def chat(
     # original_response = await interaction.original_response()
     # history[original_response.id] = messages
     message: discord.WebhookMessage = await ctx.respond(response)
-    history[message.id] = messages
+    history[message.id] = json.dumps(messages)
 
 
 @bot.event
@@ -112,7 +112,7 @@ async def on_message(
         message: discord.Message
 ):
     if message.reference and message.reference.message_id in history:
-        messages = history[message.reference.message_id]
+        messages = json.loads(history[message.reference.message_id])
         messages.append({"role": "user", "content": message.content})
         completion = openai.ChatCompletion.create(model="gpt-4", messages=messages)
         response = completion["choices"][0]["message"]["content"]
@@ -120,7 +120,7 @@ async def on_message(
 
         for i in range(0, len(response), MAX_MSG_LENGTH):
             reply = await message.reply(response[i:i + MAX_MSG_LENGTH])
-            history[reply.id] = messages
+            history[reply.id] = json.dumps(messages)
 
 
 @bot.event
