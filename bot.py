@@ -1,13 +1,13 @@
 import json
 import os
 from random import choice
-from typing import List, Dict
+from typing import Dict
 
 import discord
 import openai
 from discord import option
 from discord.ext import commands
-from pixivpy_async import AppPixivAPI
+from pixivpy3 import AppPixivAPI
 
 CONFIG_NAME: str = "config.json"
 
@@ -25,7 +25,7 @@ history: Dict[int, str] = dict()
 
 @bot.event
 async def on_ready():
-    # await api.login(refresh_token=REFRESH_TOKEN)
+    api.auth(refresh_token=REFRESH_TOKEN)
     openai.api_key = API_KEY
     print(f"We have logged in as {bot.user}")
 
@@ -52,15 +52,15 @@ async def pixiv(
         duration: str
 ):
     # Search for images based on the query
-    search_result = await api.search_illust(query, sort='popular_desc', duration=duration)
+    search_result = api.search_illust(query, sort='popular_desc', duration=duration)
 
     if search_result.illusts and len(search_result.illusts) > 0:
         # Get the first image from the search result
         illust = choice(search_result.illusts)
 
-        fname = "{}.webp".format(illust.id)
+        fname = "{}.png".format(illust.id)
         # Download the image to a local file
-        await api.download(illust.image_urls.large, fname=fname)
+        api.download(illust.image_urls.large, fname=fname)
 
         # Send the image to the Discord channel
         with open(fname, "rb") as f:
@@ -100,9 +100,6 @@ async def chat(
     completion = openai.ChatCompletion.create(model="gpt-4", messages=messages)
     response = completion["choices"][0]["message"]["content"]
     messages.append({"role": "assistant", "content": response})
-    # interaction = await ctx.respond(response)
-    # original_response = await interaction.original_response()
-    # history[original_response.id] = messages
     message: discord.WebhookMessage = await ctx.respond(response)
     history[message.id] = json.dumps(messages)
 
