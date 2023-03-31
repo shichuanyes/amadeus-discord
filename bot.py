@@ -1,5 +1,6 @@
 import json
 import os
+import time
 from random import choice
 from typing import Dict
 
@@ -12,6 +13,7 @@ from pixivpy3 import AppPixivAPI
 CONFIG_NAME: str = "config.json"
 
 MAX_MSG_LENGTH: int = 2000
+TOKEN_EXPIRATION: int = 3600
 
 TOKEN: str = ""
 REFRESH_TOKEN: str = ""
@@ -20,12 +22,16 @@ API_KEY: str = ""
 api = AppPixivAPI()
 bot = discord.Bot()
 
+last_auth: int = 0
+
 history: Dict[int, str] = dict()
 
 
 @bot.event
 async def on_ready():
     api.auth(refresh_token=REFRESH_TOKEN)
+    global last_auth
+    last_auth = int(time.time())
     openai.api_key = API_KEY
     print(f"We have logged in as {bot.user}")
 
@@ -51,7 +57,11 @@ async def pixiv(
         query: str,
         duration: str
 ):
-    api.auth(refresh_token=REFRESH_TOKEN)
+    curr_auth = int(time.time())
+    global last_auth
+    if curr_auth - last_auth >= TOKEN_EXPIRATION:
+        api.auth(refresh_token=REFRESH_TOKEN)
+        last_auth = curr_auth
 
     # Search for images based on the query
     search_result = api.search_illust(query, sort='popular_desc', duration=duration)
