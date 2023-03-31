@@ -51,6 +51,8 @@ async def pixiv(
         query: str,
         duration: str
 ):
+    api.auth(refresh_token=REFRESH_TOKEN)
+
     # Search for images based on the query
     search_result = api.search_illust(query, sort='popular_desc', duration=duration)
 
