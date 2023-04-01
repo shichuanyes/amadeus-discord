@@ -2,7 +2,7 @@ import json
 import os
 import time
 from random import choice
-from typing import Dict
+from typing import Dict, Optional
 
 import discord
 import openai
@@ -109,10 +109,10 @@ async def chat(
             "content": message
         }
     ]
-    completion = openai.ChatCompletion.create(model="gpt-4", messages=messages)
+    completion = await openai.ChatCompletion.acreate(model="gpt-4", messages=messages)
     response = completion["choices"][0]["message"]["content"]
     messages.append({"role": "assistant", "content": response})
-    message: discord.WebhookMessage = await ctx.respond(response)
+    message: Optional[discord.WebhookMessage] = await ctx.followup.send(response)
     history[message.id] = json.dumps(messages)
 
 
@@ -123,7 +123,7 @@ async def on_message(
     if message.reference and message.reference.message_id in history:
         messages = json.loads(history[message.reference.message_id])
         messages.append({"role": "user", "content": message.content})
-        completion = openai.ChatCompletion.create(model="gpt-4", messages=messages)
+        completion = await openai.ChatCompletion.acreate(model="gpt-4", messages=messages)
         response = completion["choices"][0]["message"]["content"]
         messages.append({"role": "assistant", "content": response})
 
