@@ -77,7 +77,10 @@ async def pixiv(
         # Send the image to the Discord channel
         with open(fname, "rb") as f:
             file = discord.File(f)
-            await ctx.respond(file=file)
+            msg = f"Title: **{illust.title}**\n" \
+                  f"User: **{illust.user.name}**\n" \
+                  f"Tags: {', '.join(['**' + tag.name + '**' for tag in illust.tags])}"
+            await ctx.respond(msg, file=file)
 
         # Delete the local file
         os.remove(fname)
