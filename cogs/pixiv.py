@@ -55,11 +55,10 @@ class Pixiv(commands.Cog):
 class TagButton(discord.ui.Button):
     def __init__(self, tag: str, pixiv: Pixiv):
         super().__init__(label=tag)
-        self.tag = tag
         self.pixiv = pixiv
 
     async def callback(self, interaction: discord.Interaction):
-        await send_pixiv(pixiv=self.pixiv, target=interaction, query=self.tag)
+        await send_pixiv(pixiv=self.pixiv, target=interaction, query=self.label)
 
 
 class TagView(discord.ui.View):
@@ -69,7 +68,12 @@ class TagView(discord.ui.View):
             self.add_item(TagButton(tag, pixiv))
 
 
-async def send_pixiv(pixiv: Pixiv, target: discord.ApplicationContext | discord.Interaction, query: str, duration=None):
+async def send_pixiv(
+        pixiv: Pixiv,
+        target: discord.ApplicationContext | discord.Interaction,
+        query: str,
+        duration: str = None
+):
     send: Callable = target.respond if target is discord.ApplicationContext else target.response.send_message
 
     curr_auth = int(time.time())
