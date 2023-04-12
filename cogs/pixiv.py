@@ -38,6 +38,7 @@ class Pixiv(commands.Cog):
             query: str,
             duration: str
     ):
+        ctx.user
         await send_pixiv(pixiv=self, target=ctx, query=query, duration=duration)
 
     @commands.Cog.listener()
@@ -92,9 +93,8 @@ async def send_pixiv(
         pixiv.api.download(illust.image_urls.large, fname=fname)
         with open(fname, "rb") as f:
             file = discord.File(f)
-            msg = f"Title: **{illust.title}**\n" \
-                  f"User: **{illust.user.name}**\n" \
-                  f"Tags: {', '.join(['**' + tag + '**' for tag in tags])}"
+            msg = f"{target.user.mention} searched `{query}`:\n" \
+                  f"**{illust.title}** by **{illust.user.name}**"
             await send(msg, file=file, view=TagView(tags, pixiv))
         os.remove(fname)
     else:
