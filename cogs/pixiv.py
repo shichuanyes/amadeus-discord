@@ -1,7 +1,7 @@
 import os
 import time
 from random import choice
-from typing import List, Callable
+from typing import List, Callable, Literal
 
 import discord
 from discord import option
@@ -28,6 +28,8 @@ class Pixiv(commands.Cog):
         description="Get'em hentais"
     )
     @option("query", description="Enter your query", required=True)
+    @option("search_target", description="Matching strategy", default="partial_match_for_tags",
+            choice=["partial_match_for_tags", "exact_match_for_tags", "title_and_caption", "keyword"], required=False)
     @option("duration", description="Duration of the images",
             choices=["within_last_day", "within_last_week", "within_last_month"], required=False)
     @commands.cooldown(3, 10, commands.BucketType.user)
@@ -36,10 +38,10 @@ class Pixiv(commands.Cog):
             self,
             ctx: discord.ApplicationContext,
             query: str,
+            search_target: str,
             duration: str
     ):
-        ctx.user
-        await send_pixiv(pixiv=self, target=ctx, query=query, duration=duration)
+        await send_pixiv(pixiv=self, target=ctx, query=query, search_target=search_target, duration=duration)
 
     @commands.Cog.listener()
     async def on_application_command_error(
@@ -59,7 +61,7 @@ class TagButton(discord.ui.Button):
         self.pixiv = pixiv
 
     async def callback(self, interaction: discord.Interaction):
-        await send_pixiv(pixiv=self.pixiv, target=interaction, query=self.label)
+        await send_pixiv(pixiv=self.pixiv, target=interaction, query=self.label, search_target="exact_match_for_tags")
 
 
 class TagView(discord.ui.View):
@@ -73,6 +75,7 @@ async def send_pixiv(
         pixiv: Pixiv,
         target: discord.ApplicationContext | discord.Interaction,
         query: str,
+        search_target: str = "",
         duration: str = None
 ):
     send: Callable = target.respond if target is discord.ApplicationContext else target.response.send_message
@@ -82,7 +85,7 @@ async def send_pixiv(
         pixiv.api.auth(refresh_token=Pixiv.REFRESH_TOKEN)
         pixiv.last_auth = curr_auth
 
-    search_result = pixiv.api.search_illust(query, sort='popular_desc', duration=duration)
+    search_result = pixiv.api.search_illust(query, search_target=search_target, sort='popular_desc', duration=duration)
 
     if search_result.illusts and len(search_result.illusts) > 0:
         illust = choice(search_result.illusts)
