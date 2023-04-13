@@ -112,10 +112,12 @@ async def send_pixiv(
             else illust.meta_pages[0].image_urls.original
         # url = illust.image_urls.large
         name = os.path.basename(url)
-        path = os.path.join(".", "img")
-        file_path = os.path.join(path, name)
+        directory = os.path.join(".", "img")
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        file_path = os.path.join(directory, name)
 
-        pixiv.api.download(url, path=path, replace=False)
+        pixiv.api.download(url, path=directory, replace=False)
         with open(file_path, "rb") as f:
             file = discord.File(f)
             msg = f"{target.user.mention} searched `{query}`:\n" \
