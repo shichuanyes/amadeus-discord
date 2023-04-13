@@ -41,7 +41,14 @@ class Pixiv(commands.Cog):
             search_target: str,
             duration: str
     ):
-        await send_pixiv(pixiv=self, target=ctx, query=query, search_target=search_target, duration=duration)
+        await ctx.defer()
+        await send_pixiv(
+            pixiv=self,
+            target=ctx,
+            query=query,
+            search_target=search_target,
+            duration=duration
+        )
 
     @commands.Cog.listener()
     async def on_application_command_error(
@@ -61,7 +68,13 @@ class TagButton(discord.ui.Button):
         self.pixiv = pixiv
 
     async def callback(self, interaction: discord.Interaction):
-        await send_pixiv(pixiv=self.pixiv, target=interaction, query=self.label, search_target="exact_match_for_tags")
+        await interaction.response.defer()
+        await send_pixiv(
+            pixiv=self.pixiv,
+            target=interaction,
+            query=self.label,
+            search_target="exact_match_for_tags"
+        )
 
 
 class TagView(discord.ui.View):
@@ -78,7 +91,7 @@ async def send_pixiv(
         search_target: str = "",
         duration: str = None
 ):
-    send: Callable = target.respond if target is discord.ApplicationContext else target.response.send_message
+    send: Callable = target.followup.send
 
     curr_auth = int(time.time())
     if curr_auth - pixiv.last_auth >= Pixiv.EXPIRATION_TIME:
@@ -90,16 +103,19 @@ async def send_pixiv(
     if search_result.illusts and len(search_result.illusts) > 0:
         illust = choice(search_result.illusts)
 
-        fname = "{}.png".format(illust.id)
         tags = [tag.name for tag in illust.tags]
 
-        pixiv.api.download(illust.image_urls.large, fname=fname)
-        with open(fname, "rb") as f:
+        url = illust.image_urls.large
+        name = os.path.basename(url)
+        path = os.path.join(".", "img")
+        file_path = os.path.join(path, name)
+
+        pixiv.api.download(url, path=path, replace=False)
+        with open(file_path, "rb") as f:
             file = discord.File(f)
             msg = f"{target.user.mention} searched `{query}`:\n" \
                   f"**{illust.title}** by **{illust.user.name}**"
             await send(msg, file=file, view=TagView(tags, pixiv))
-        os.remove(fname)
     else:
         await send(choice([
             "靠嫩娘，妹搜着",
