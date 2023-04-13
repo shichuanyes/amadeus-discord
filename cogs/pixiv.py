@@ -57,9 +57,9 @@ class Pixiv(commands.Cog):
             error: discord.DiscordException
     ):
         if isinstance(error, commands.CommandOnCooldown):
-            await ctx.followup.send("转CD中")
-        elif isinstance(error, discord.errors.ApplicationCommandInvokeError) and "Payload Too Large" in str(error):
-            await ctx.followup.send("我穷蛆发不了8mb以上sad")
+            await ctx.respond("转CD中")
+        elif isinstance(error, discord.errors.HTTPException) and "payload is too large" in str(error):
+            await ctx.respond("我穷蛆发不了8mb以上sad")
         else:
             raise error
 
