@@ -79,9 +79,20 @@ class TagButton(discord.ui.Button):
         )
 
 
-class TagView(discord.ui.View):
-    def __init__(self, tags: List[str], pixiv: Pixiv):
+class ArtistButton(discord.ui.Button):
+    def __init__(self, artist: str, pixiv: Pixiv):
+        super().__init__(label=artist, style=discord.ButtonStyle.primary, emoji='🎨')
+        self.artist = artist
+        self.pixiv = pixiv
+
+    async def callback(self, interaction: discord.Interaction):
+        await interaction.response.send_message(f"作者是{self.artist}")
+
+
+class IllustView(discord.ui.View):
+    def __init__(self, tags: List[str], artist: str, pixiv: Pixiv):
         super().__init__(timeout=None)
+        self.add_item(ArtistButton(artist, pixiv))
         for tag in tags:
             self.add_item(TagButton(tag, pixiv))
 
@@ -122,7 +133,7 @@ async def send_pixiv(
             file = discord.File(f)
             msg = f"{target.user.mention} searched `{query}`:\n" \
                   f"**{illust.title}** by **{illust.user.name}**"
-            await send(msg, file=file, view=TagView(tags, pixiv))
+            await send(msg, file=file, view=IllustView(tags, illust.user.name, pixiv))
     else:
         await send(choice([
             "靠嫩娘，妹搜着",
