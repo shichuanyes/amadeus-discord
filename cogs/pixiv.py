@@ -29,7 +29,7 @@ class Pixiv(commands.Cog):
     )
     @option("query", description="Enter your query", required=True)
     @option("search_target", description="Matching strategy", default="partial_match_for_tags",
-            choice=["partial_match_for_tags", "exact_match_for_tags", "title_and_caption", "keyword"], required=False)
+            choices=["partial_match_for_tags", "exact_match_for_tags", "title_and_caption", "keyword"], required=False)
     @option("duration", description="Duration of the images",
             choices=["within_last_day", "within_last_week", "within_last_month"], required=False)
     @commands.cooldown(3, 10, commands.BucketType.user)
@@ -58,6 +58,8 @@ class Pixiv(commands.Cog):
     ):
         if isinstance(error, commands.CommandOnCooldown):
             await ctx.respond("转CD中")
+        elif isinstance(error, discord.errors.HTTPException) and "payload is too large" in str(error):
+            await ctx.respond("我穷蛆发不了8mb以上sad")
         else:
             raise error
 
@@ -105,7 +107,10 @@ async def send_pixiv(
 
         tags = [tag.name for tag in illust.tags]
 
-        url = illust.image_urls.large
+        # TODO: add support for multi-page work
+        url = illust.meta_single_page.original_image_url if illust.meta_single_page \
+            else illust.meta_pages[0].image_urls.original
+        # url = illust.image_urls.large
         name = os.path.basename(url)
         path = os.path.join(".", "img")
         file_path = os.path.join(path, name)
