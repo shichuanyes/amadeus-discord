@@ -1,7 +1,8 @@
 import os
 import time
+from collections import deque
 from random import choice
-from typing import List, Callable, Literal
+from typing import List, Callable
 
 import discord
 from discord import option
@@ -11,15 +12,20 @@ from pixivpy3 import AppPixivAPI
 
 class Pixiv(commands.Cog):
     EXPIRATION_TIME = 3600
+    IMAGE_HISTORY_SIZE = 100
+    FILE_SIZE_LIMIT = 8e6
     REFRESH_TOKEN = None
 
     def __init__(self, bot, refresh_token):
         Pixiv.REFRESH_TOKEN = refresh_token
 
         self.bot = bot
+
         self.api = AppPixivAPI()
         self.api.auth(refresh_token=Pixiv.REFRESH_TOKEN)
         self.last_auth = int(time.time())
+
+        self.history = deque(maxlen=self.IMAGE_HISTORY_SIZE)
 
         print("Loaded cog Pixiv")
 
@@ -58,7 +64,7 @@ class Pixiv(commands.Cog):
     ):
         if isinstance(error, commands.CommandOnCooldown):
             await ctx.respond("转CD中")
-        elif isinstance(error, discord.errors.HTTPException) and "payload is too large" in str(error):
+        elif isinstance(error, discord.errors.HTTPException) and "Payload Too Large" in str(error):
             await ctx.respond("我穷蛆发不了8mb以上sad")
         else:
             raise error
@@ -114,14 +120,18 @@ async def send_pixiv(
     search_result = pixiv.api.search_illust(query, search_target=search_target, sort='popular_desc', duration=duration)
 
     if search_result.illusts and len(search_result.illusts) > 0:
-        illust = choice(search_result.illusts)
+        illust = None
+        for ill in search_result.illusts:
+            if ill.id not in pixiv.history:
+                illust = ill
+        illust = illust if illust else search_result.illusts[0]
+        pixiv.history.append(illust.id)
 
         tags = [tag.name for tag in illust.tags]
 
         # TODO: add support for multi-page work
         url = illust.meta_single_page.original_image_url if illust.meta_single_page \
             else illust.meta_pages[0].image_urls.original
-        # url = illust.image_urls.large
         name = os.path.basename(url)
         directory = os.path.join(".", "img")
         if not os.path.exists(directory):
@@ -129,6 +139,10 @@ async def send_pixiv(
         file_path = os.path.join(directory, name)
 
         pixiv.api.download(url, path=directory, replace=False)
+        if os.path.getsize(file_path) > pixiv.FILE_SIZE_LIMIT:  # If image exceeds discord file limit
+            name = os.path.basename(illust.image_urls.large)
+            file_path = os.path.join(directory, name)
+            pixiv.api.download(illust.image_urls.large, path=directory, replace=False)
         with open(file_path, "rb") as f:
             file = discord.File(f)
             msg = f"{target.user.mention} searched `{query}`:\n" \
