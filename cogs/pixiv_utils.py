@@ -1,0 +1,107 @@
+import os.path
+import time
+from collections import deque
+from typing import Dict, Any
+
+from pixivpy3 import AppPixivAPI
+
+
+ParsedJson = Any
+
+
+class Pixiv:
+    def __init__(
+            self,
+            refresh_token: str,
+            history_size: int = 100,
+            file_size_limit: int = 8e6
+    ):
+        self.refresh_token: str = refresh_token
+        self.file_size_limit = file_size_limit
+
+        self.api = AppPixivAPI()
+        self.history = deque(maxlen=history_size)
+
+        self.access_token_expiration: int = 0
+
+    def auth_if_expired(self) -> bool:
+        now = time.time()
+        if now > self.access_token_expiration:
+            response = self.api.auth(refresh_token=self.refresh_token)
+            self.access_token_expiration = now + response.expires_in
+            return True
+        return False
+
+    def search_illust(
+            self,
+            word: str,
+            search_target: str = "partial_match_for_tags",
+            sort: str = "popular_desc",
+            duration: str = None,
+            start_date: str | None = None,
+            end_date: str | None = None,
+    ) -> ParsedJson | None:
+        self.auth_if_expired()
+
+        response = self.api.search_illust(
+            word=word,
+            search_target=search_target,
+            sort=sort,
+            duration=duration,
+            start_date=start_date,
+            end_date=end_date
+        )
+
+        if not response.illusts or len(response.illusts) == 0:
+            return None
+
+        result: ParsedJson | None = None
+        for illust in response.illusts:
+            if illust.id not in self.history:
+                result = illust
+        if not result:
+            result = response.illusts[0]
+            self.history.remove(result.id)
+        self.history.append(result.id)
+
+        return result
+
+    def illust_detail(
+            self,
+            illust_id: int | str
+    ) -> ParsedJson | None:
+        response = self.api.illust_detail(illust_id=illust_id)
+        if not response:
+            return None
+        return response.illust
+
+    @staticmethod
+    def parse_image_urls(
+            illust: ParsedJson,
+            page: int = 0
+    ) -> Dict:
+        if illust.meta_single_page:
+            result = illust.image_urls
+            result['original'] = illust.meta_single_page.original_image_url
+            return result
+        else:
+            return illust.meta_pages[page].image_urls
+
+    def download(
+            self,
+            urls: ParsedJson,
+            directory: str,
+    ) -> str:
+        file = self._download(urls.original, directory)
+        if os.path.getsize(file) > self.file_size_limit:
+            file = self._download(urls.large, directory)
+        return file
+
+    def _download(
+            self,
+            url: str,
+            directory: str
+    ) -> str:
+        self.api.download(url, path=directory)
+        return os.path.join(directory, os.path.basename(url))
+

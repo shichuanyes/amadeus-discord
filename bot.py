@@ -1,11 +1,12 @@
 import json
+import os
 from typing import Dict
 
 import discord
 from discord.ext import commands
 
 from cogs.chat import Chat
-from cogs.pixiv import Pixiv
+from cogs.pixiv import PixivCog
 
 CONFIG_NAME: str = "config.json"
 
@@ -18,7 +19,7 @@ bot = discord.Bot()
 
 @bot.event
 async def on_connect():
-    bot.add_cog(Pixiv(bot, REFRESH_TOKEN))
+    bot.add_cog(PixivCog(bot, REFRESH_TOKEN, os.path.join('.', 'img')))
     bot.add_cog(Chat(bot, API_KEY))
     await bot.sync_commands()
 
