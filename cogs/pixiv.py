@@ -48,7 +48,7 @@ class PixivCog(commands.Cog):
             ]))
             return
         await ctx.defer()
-        await self.send_pixiv(interaction=ctx, illust=illust, msg=f"{ctx.user.mention} searched `{query}`:\n")
+        await self.send_pixiv(ctx, illust=illust, msg=f"{ctx.user.mention} searched `{query}`:\n")
 
     @commands.Cog.listener()
     async def on_application_command_error(
@@ -67,15 +67,16 @@ class PixivCog(commands.Cog):
             self,
             interaction: discord.ApplicationContext | discord.Interaction,
             illust: ParsedJson,
+            page: int = 0,
             msg: str = ''
     ):
-        tags = [tag.name for tag in illust.tags]
-        urls = self.pixiv.parse_image_urls(illust)
+        urls = self.pixiv.parse_image_urls(illust, page=page)
         file = self.pixiv.download(urls, self.image_directory)
         with open(file, "rb") as f:
             file = discord.File(f)
             msg += f"**{illust.title}** by **{illust.user.name}**"
-            await interaction.followup.send(msg, file=file, view=IllustView(self, tags, illust.user.name))
+            msg += f" [{page + 1}/{len(illust.meta_pages)}]" if not illust.meta_single_page else ''
+            await interaction.followup.send(msg, file=file, view=IllustView(self, illust, page))
 
 
 class TagButton(discord.ui.Button):
@@ -94,17 +95,34 @@ class TagButton(discord.ui.Button):
 
 
 class ArtistButton(discord.ui.Button):
-    def __init__(self, artist: str):
+    def __init__(self, pc: PixivCog, artist: str):
         super().__init__(label=artist, style=discord.ButtonStyle.primary, emoji='🎨')
+        self.pc = pc
         self.artist = artist
 
     async def callback(self, interaction: discord.Interaction):
         await interaction.response.send_message(f"作者是{self.artist}")
 
 
+class NextButton(discord.ui.Button):
+    def __init__(self, pc: PixivCog, illust_id: str, page: int):
+        super().__init__(label='Next', style=discord.ButtonStyle.primary, emoji='▶️')
+        self.pc = pc
+        self.illust_id = illust_id
+        self.page = page
+
+    async def callback(self, interaction: discord.Interaction):
+        await interaction.response.defer()
+        illust = self.pc.pixiv.illust_detail(self.illust_id)
+        await self.pc.send_pixiv(interaction, illust=illust, page=self.page,
+                                 msg=f"{interaction.user.mention} clicked on `Next`:\n")
+
+
 class IllustView(discord.ui.View):
-    def __init__(self, pc: PixivCog, tags: List[str], artist: str):
+    def __init__(self, pc: PixivCog, illust: ParsedJson, page: int):
         super().__init__(timeout=None)
-        self.add_item(ArtistButton(artist))
-        for tag in tags:
-            self.add_item(TagButton(pc, tag))
+        self.add_item(ArtistButton(pc, artist=illust.user.name))
+        if not illust.meta_single_page and page < len(illust.meta_pages) - 1:
+            self.add_item(NextButton(pc, illust_id=illust.id, page=page + 1))
+        for tag in illust.tags:
+            self.add_item(TagButton(pc, tag=tag.name))

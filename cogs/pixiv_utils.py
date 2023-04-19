@@ -68,6 +68,8 @@ class Pixiv:
             self,
             illust_id: int | str
     ) -> ParsedJson | None:
+        self.auth_if_expired()
+
         response = self.api.illust_detail(illust_id=illust_id)
         if not response:
             return None
@@ -100,6 +102,8 @@ class Pixiv:
             url: str,
             directory: str
     ) -> str:
+        self.auth_if_expired()
+
         self.api.download(url, path=directory)
         return os.path.join(directory, os.path.basename(url))
 
