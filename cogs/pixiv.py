@@ -1,5 +1,4 @@
 from random import choice
-from typing import List
 
 import discord
 from discord import option
@@ -80,8 +79,8 @@ class PixivCog(commands.Cog):
 
 
 class TagButton(discord.ui.Button):
-    def __init__(self, pc: PixivCog, tag: str):
-        super().__init__(label=tag)
+    def __init__(self, pc: PixivCog, tag: str, row: int):
+        super().__init__(label=tag, row=row)
         self.pc = pc
 
     async def callback(self, interaction: discord.Interaction):
@@ -95,8 +94,8 @@ class TagButton(discord.ui.Button):
 
 
 class ArtistButton(discord.ui.Button):
-    def __init__(self, pc: PixivCog, artist: str):
-        super().__init__(label=artist, style=discord.ButtonStyle.primary, emoji='🎨')
+    def __init__(self, pc: PixivCog, artist: str, row: int = 0):
+        super().__init__(label=artist, style=discord.ButtonStyle.primary, emoji='🎨', row=row)
         self.pc = pc
         self.artist = artist
 
@@ -105,8 +104,8 @@ class ArtistButton(discord.ui.Button):
 
 
 class NextButton(discord.ui.Button):
-    def __init__(self, pc: PixivCog, illust_id: str, page: int):
-        super().__init__(label='Next', style=discord.ButtonStyle.primary, emoji='▶️')
+    def __init__(self, pc: PixivCog, illust_id: str, page: int, row: int = 0):
+        super().__init__(label='Next', style=discord.ButtonStyle.primary, emoji='▶️', row=row)
         self.pc = pc
         self.illust_id = illust_id
         self.page = page
@@ -115,7 +114,7 @@ class NextButton(discord.ui.Button):
         await interaction.response.defer()
         illust = self.pc.pixiv.illust_detail(self.illust_id)
         await self.pc.send_pixiv(interaction, illust=illust, page=self.page,
-                                 msg=f"{interaction.user.mention} clicked on `Next`:\n")
+                                 msg=f"{interaction.user.mention} clicked on `{self.label}`:\n")
 
 
 class IllustView(discord.ui.View):
@@ -124,5 +123,5 @@ class IllustView(discord.ui.View):
         self.add_item(ArtistButton(pc, artist=illust.user.name))
         if not illust.meta_single_page and page < len(illust.meta_pages) - 1:
             self.add_item(NextButton(pc, illust_id=illust.id, page=page + 1))
-        for tag in illust.tags:
-            self.add_item(TagButton(pc, tag=tag.name))
+        for i, tag in enumerate(illust.tags):
+            self.add_item(TagButton(pc, tag=tag.name, row=i // 5 + 1))
