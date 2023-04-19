@@ -84,11 +84,11 @@ class TagButton(discord.ui.Button):
         self.pc = pc
 
     async def callback(self, interaction: discord.Interaction):
-        await interaction.response.defer()
         illust = self.pc.pixiv.search_illust(
             word=self.label,
             search_target='exact_match_for_tags'
         )
+        await interaction.response.defer()
         await self.pc.send_pixiv(interaction, illust=illust,
                                  msg=f"{interaction.user.mention} clicked on `{self.label}`:\n")
 
@@ -111,8 +111,8 @@ class NextButton(discord.ui.Button):
         self.page = page
 
     async def callback(self, interaction: discord.Interaction):
-        await interaction.response.defer()
         illust = self.pc.pixiv.illust_detail(self.illust_id)
+        await interaction.response.defer()
         await self.pc.send_pixiv(interaction, illust=illust, page=self.page,
                                  msg=f"{interaction.user.mention} clicked on `{self.label}`:\n")
 
