@@ -1,12 +1,10 @@
 import os.path
 import time
 from collections import deque
-from typing import Dict, Any
+from typing import Dict
 
 from pixivpy3 import AppPixivAPI
-
-
-ParsedJson = Any
+from pixivpy3.utils import ParsedJson
 
 
 class Pixiv:

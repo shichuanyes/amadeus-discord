@@ -4,6 +4,7 @@ from typing import List
 import discord
 from discord import option
 from discord.ext import commands
+from pixivpy3.utils import ParsedJson
 
 from cogs.pixiv_utils import Pixiv
 
@@ -34,8 +35,20 @@ class PixivCog(commands.Cog):
             search_target: str,
             duration: str
     ):
+        illust = self.pixiv.search_illust(
+            word=query,
+            search_target=search_target,
+            duration=duration
+        )
+        if not illust:
+            await ctx.respond(choice([
+                "靠嫩娘，妹搜着",
+                "你的xp意思有点超前了",
+                "没活了"
+            ]))
+            return
         await ctx.defer()
-        await self.send_pixiv(interaction=ctx, word=query, search_target=search_target, duration=duration)
+        await self.send_pixiv(interaction=ctx, illust=illust, msg=f"{ctx.user.mention} searched `{query}`:\n")
 
     @commands.Cog.listener()
     async def on_application_command_error(
@@ -53,28 +66,15 @@ class PixivCog(commands.Cog):
     async def send_pixiv(
             self,
             interaction: discord.ApplicationContext | discord.Interaction,
-            word: str,
-            search_target: str = "partial_match_for_tags",
-            duration: str = None
+            illust: ParsedJson,
+            msg: str = ''
     ):
-        illust = self.pixiv.search_illust(
-            word=word,
-            search_target=search_target,
-            duration=duration
-        )
-        if not illust:
-            await interaction.followup.send(choice([
-                "靠嫩娘，妹搜着",
-                "你的xp意思有点超前了",
-                "没活了"
-            ]))
         tags = [tag.name for tag in illust.tags]
         urls = self.pixiv.parse_image_urls(illust)
         file = self.pixiv.download(urls, self.image_directory)
         with open(file, "rb") as f:
             file = discord.File(f)
-            msg = f"{interaction.user.mention} searched `{word}`:\n" \
-                  f"**{illust.title}** by **{illust.user.name}**"
+            msg += f"**{illust.title}** by **{illust.user.name}**"
             await interaction.followup.send(msg, file=file, view=IllustView(self, tags, illust.user.name))
 
 
@@ -85,7 +85,12 @@ class TagButton(discord.ui.Button):
 
     async def callback(self, interaction: discord.Interaction):
         await interaction.response.defer()
-        await self.pc.send_pixiv(interaction, self.label, search_target='exact_match_for_tags')
+        illust = self.pc.pixiv.search_illust(
+            word=self.label,
+            search_target='exact_match_for_tags'
+        )
+        await self.pc.send_pixiv(interaction, illust=illust,
+                                 msg=f"{interaction.user.mention} clicked on `{self.label}`:\n")
 
 
 class ArtistButton(discord.ui.Button):
