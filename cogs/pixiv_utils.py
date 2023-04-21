@@ -1,4 +1,5 @@
 import os.path
+import pickle
 import time
 from collections import deque
 from typing import Dict, List
@@ -12,13 +13,18 @@ class Pixiv:
             self,
             refresh_token: str,
             history_size: int = 100,
-            file_size_limit: int = 8e6
+            file_size_limit: int = 8e6,
+            history_pickle_file: str = "history.pkl"
     ):
         self.refresh_token: str = refresh_token
         self.file_size_limit = file_size_limit
 
         self.api = AppPixivAPI()
-        self.history = deque(maxlen=history_size)
+        if history_pickle_file and os.path.exists(history_pickle_file):
+            with open(history_pickle_file, "rb") as f:
+                self.history = pickle.load(f)
+        else:
+            self.history = deque(maxlen=history_size)
 
         self.access_token_expiration: int = 0
 
@@ -113,3 +119,7 @@ class Pixiv:
 
         self.api.download(url, path=directory)
         return os.path.join(directory, os.path.basename(url))
+
+    def save_history(self, file: str = "history.pkl") -> None:
+        with open(file, 'wb') as f:
+            pickle.dump(self.history, f)

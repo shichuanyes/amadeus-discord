@@ -62,6 +62,10 @@ class PixivCog(commands.Cog):
         else:
             raise error
 
+    @commands.Cog.listener()
+    async def on_disconnect(self):
+        self.pixiv.save_history()
+
     async def send_pixiv(
             self,
             interaction: discord.ApplicationContext | discord.Interaction,
