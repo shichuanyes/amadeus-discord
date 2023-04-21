@@ -1,7 +1,7 @@
 import os.path
 import time
 from collections import deque
-from typing import Dict
+from typing import Dict, List
 
 from pixivpy3 import AppPixivAPI
 from pixivpy3.utils import ParsedJson
@@ -53,15 +53,22 @@ class Pixiv:
         if not response.illusts or len(response.illusts) == 0:
             return None
 
-        result: ParsedJson | None = None
-        for illust in response.illusts:
-            if illust.id not in self.history:
-                result = illust
-        if not result:
-            result = response.illusts[0]
-            self.history.remove(result.id)
+        result = self._select_illust(response.illusts)
         self.history.append(result.id)
+        return result
 
+    def _select_illust(self, illusts: List[ParsedJson]) -> ParsedJson:
+        result = None
+        min_ = len(self.history)
+        for illust in illusts:
+            try:
+                idx = self.history.index(illust.id)
+            except ValueError:
+                return illust
+            if min_ > idx:
+                min_ = idx
+                result = illust
+        del self.history[min_]
         return result
 
     def illust_detail(
@@ -106,4 +113,3 @@ class Pixiv:
 
         self.api.download(url, path=directory)
         return os.path.join(directory, os.path.basename(url))
-
