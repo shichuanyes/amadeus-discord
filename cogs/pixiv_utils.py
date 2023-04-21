@@ -8,7 +8,7 @@ from pixivpy3 import AppPixivAPI
 from pixivpy3.utils import ParsedJson
 
 
-class Pixiv:
+class PixivUtils:
     def __init__(
             self,
             refresh_token: str,
