@@ -94,17 +94,22 @@ class TagButton(discord.ui.Button):
         )
         await interaction.response.defer()
         await self.pixiv.send_pixiv(interaction, illust=illust,
-                                 msg=f"{interaction.user.mention} clicked on `{self.label}`:\n")
+                                    msg=f"{interaction.user.mention} clicked on `{self.label}`:\n")
 
 
 class ArtistButton(discord.ui.Button):
-    def __init__(self, pixiv: Pixiv, artist: str, row: int = 0):
+    def __init__(self, pixiv: Pixiv, artist: str, user_id: int, row: int = 0):
         super().__init__(label=artist, style=discord.ButtonStyle.primary, emoji='🎨', row=row)
         self.pixiv = pixiv
-        self.artist = artist
+        self.user_id = user_id
 
     async def callback(self, interaction: discord.Interaction):
-        await interaction.response.send_message(f"作者是{self.artist}")
+        illust = self.pixiv.utils.user_illusts(
+            user_id=self.user_id
+        )
+        await interaction.response.defer()
+        await self.pixiv.send_pixiv(interaction, illust=illust,
+                                    msg=f"{interaction.user.mention} clicked on `{self.label}`:\n")
 
 
 class NextButton(discord.ui.Button):
@@ -118,13 +123,13 @@ class NextButton(discord.ui.Button):
         illust = self.pixiv.utils.illust_detail(self.illust_id)
         await interaction.response.defer()
         await self.pixiv.send_pixiv(interaction, illust=illust, page=self.page,
-                                 msg=f"{interaction.user.mention} clicked on `{self.label}`:\n")
+                                    msg=f"{interaction.user.mention} clicked on `{self.label}`:\n")
 
 
 class IllustView(discord.ui.View):
     def __init__(self, pixiv: Pixiv, illust: ParsedJson, page: int):
         super().__init__(timeout=None)
-        self.add_item(ArtistButton(pixiv, artist=illust.user.name))
+        self.add_item(ArtistButton(pixiv, artist=illust.user.name, user_id=illust.user.id))
         if not illust.meta_single_page and page < len(illust.meta_pages) - 1:
             self.add_item(NextButton(pixiv, illust_id=illust.id, page=page + 1))
         for i, tag in enumerate(illust.tags):

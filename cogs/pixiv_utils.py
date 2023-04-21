@@ -63,6 +63,23 @@ class PixivUtils:
         self.history.append(result.id)
         return result
 
+    def user_illusts(
+            self,
+            user_id: int
+    ) -> ParsedJson | None:
+        self.auth_if_expired()
+
+        response = self.api.user_illusts(
+            user_id=user_id
+        )
+
+        if not response.illusts or len(response.illusts) == 0:
+            return None
+
+        result = self._select_illust(response.illusts)
+        self.history.append(result.id)
+        return result
+
     def _select_illust(self, illusts: List[ParsedJson]) -> ParsedJson:
         result = None
         min_ = len(self.history)
