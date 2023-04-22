@@ -1,3 +1,4 @@
+import functools
 import os.path
 import pickle
 import time
@@ -28,14 +29,19 @@ class PixivUtils:
 
         self.access_token_expiration: int = 0
 
-    def auth_if_expired(self) -> bool:
-        now = time.time()
-        if now > self.access_token_expiration:
-            response = self.api.auth(refresh_token=self.refresh_token)
-            self.access_token_expiration = now + response.expires_in
-            return True
-        return False
+    @staticmethod
+    def auth_if_expired(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            utils = args[0]
+            now = time.time()
+            if now > utils.access_token_expiration:
+                response = utils.api.auth(refresh_token=utils.refresh_token)
+                utils.access_token_expiration = now + response.expires_in
+            return func(*args, **kwargs)
+        return wrapper
 
+    @auth_if_expired
     def search_illust(
             self,
             word: str,
@@ -45,8 +51,6 @@ class PixivUtils:
             start_date: str | None = None,
             end_date: str | None = None,
     ) -> ParsedJson | None:
-        self.auth_if_expired()
-
         response = self.api.search_illust(
             word=word,
             search_target=search_target,
@@ -63,12 +67,11 @@ class PixivUtils:
         self.history.append(result.id)
         return result
 
+    @auth_if_expired
     def user_illusts(
             self,
             user_id: int
     ) -> ParsedJson | None:
-        self.auth_if_expired()
-
         response = self.api.user_illusts(
             user_id=user_id
         )
@@ -127,13 +130,12 @@ class PixivUtils:
             file = self._download(urls.large, directory)
         return file
 
+    @auth_if_expired
     def _download(
             self,
             url: str,
             directory: str
     ) -> str:
-        self.auth_if_expired()
-
         self.api.download(url, path=directory)
         return os.path.join(directory, os.path.basename(url))
 
