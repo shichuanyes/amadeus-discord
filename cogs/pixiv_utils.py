@@ -13,7 +13,7 @@ class PixivUtils:
     def __init__(
             self,
             refresh_token: str,
-            history_size: int = 100,
+            history_size: int = 1000,
             file_size_limit: int = 8e6,
             history_pickle_file: str = "history.pkl"
     ):
