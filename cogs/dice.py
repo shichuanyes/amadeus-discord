@@ -24,4 +24,5 @@ class Dice(commands.Cog):
             side: int
     ):
         dice = [random.randint(1, side) for _ in range(number)]
-        await ctx.respond(f"{' + '.join(map(str, dice))} = {sum(dice)}")
+        await ctx.respond(f"{ctx.user.mention} rolled `{number}d{side}`"
+                          f"Result: `{' + '.join(map(str, dice))} = {sum(dice)}`")
