@@ -17,11 +17,11 @@ class Dice(commands.Cog):
     )
     @option("number", description="Number of dices", required=False, input_type=int, min_value=1, default=1)
     @option("side", description="Number of sides", required=False, input_type=int, min_value=1, default=20)
-    async def throw(
+    async def dice(
             self,
             ctx: discord.ApplicationContext,
             number: int,
             side: int
     ):
         dice = [random.randint(1, side) for _ in range(number)]
-        await ctx.respond(sum(dice))
+        await ctx.respond(f"{' + '.join(map(str, dice))} = {sum(dice)}")
