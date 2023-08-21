@@ -24,7 +24,7 @@ class Dice(commands.Cog):
             side: int
     ):
         dice = [Dice.Die(side) for _ in range(number)]
-        map(lambda x: x.roll, dice)
+        _ = map(lambda x: x.roll, dice)
         dice_str = '\n'.join(map(str, dice))
         await ctx.respond(f"{ctx.user.mention} rolled `{number}d{side}`\n"
                           f"Result: \n"
@@ -44,8 +44,6 @@ class Dice(commands.Cog):
         def __str__(self) -> str:
             face = str(self.face) if self.face else '?'
             result = (f"+{'-' * (len(face) + 2)}+\n"
-                      f"|{' ' * (len(face) + 2)}|\n"
                       f"| {face} |\n"
-                      f"|{' ' * (len(face) + 2)}|\n"
                       f"+{'-' * (len(face) + 2)}+\n")
             return result
