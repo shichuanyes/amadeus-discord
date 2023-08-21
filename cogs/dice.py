@@ -23,6 +23,29 @@ class Dice(commands.Cog):
             number: int,
             side: int
     ):
-        dice = [random.randint(1, side) for _ in range(number)]
+        dice = [Dice.Die(side) for _ in range(number)]
+        map(lambda x: x.roll, dice)
+        dice_str = '\n'.join(map(str, dice))
         await ctx.respond(f"{ctx.user.mention} rolled `{number}d{side}`\n"
-                          f"Result: `{' + '.join(map(str, dice))} = {sum(dice)}`")
+                          f"Result: \n"
+                          f"```\n"
+                          f"{dice_str}"
+                          f"```")
+
+    class Die:
+        def __init__(self, side: int):
+            self.side = side
+            self.face = None
+
+        def roll(self) -> int:
+            self.face = random.randint(1, self.side)
+            return self.face
+
+        def __str__(self) -> str:
+            face = str(self.face) if self.face else '?'
+            result = (f"+{'-' * (len(face) + 2)}+\n"
+                      f"|{' ' * (len(face) + 2)}|\n"
+                      f"| {face} |\n"
+                      f"|{' ' * (len(face) + 2)}|\n"
+                      f"+{'-' * (len(face) + 2)}+\n")
+            return result
