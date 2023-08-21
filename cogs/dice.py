@@ -24,7 +24,8 @@ class Dice(commands.Cog):
             side: int
     ):
         dice = [Dice.Die(side) for _ in range(number)]
-        _ = map(lambda x: x.roll, dice)
+        for die in dice:
+            die.roll()
         dice_str = '\n'.join(map(str, dice))
         await ctx.respond(f"{ctx.user.mention} rolled `{number}d{side}`\n"
                           f"Result: \n"
