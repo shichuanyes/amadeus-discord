@@ -65,11 +65,11 @@ class Dice(commands.Cog):
         if enable_critical:
             result = self.CRITICAL_SUCCESS_TEXT if roll == side else self.CRITICAL_FAILURE_TEXT if roll == 1 else result
 
-        await ctx.respond(f"{result}\n"
-                          f"Result: \n"
+        await ctx.respond(f"Difficulty Class: {dc}\n"
                           f"```\n"
                           f"{die}"
-                          f"```")
+                          f"```\n"
+                          f"{result}")
 
     class Die:
         def __init__(self, side: int):
