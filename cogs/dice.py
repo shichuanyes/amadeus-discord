@@ -6,6 +6,11 @@ from discord.ext import commands
 
 
 class Dice(commands.Cog):
+    CRITICAL_SUCCESS_TEXT: str = "***CRITICAL SUCCESS***"
+    CRITICAL_FAILURE_TEXT: str = "***CRITICAL FAILURE***"
+    SUCCESS_TEXT: str = "***SUCCESS***"
+    FAILURE_TEXT: str = "***FAILURE***"
+
     def __init__(self, bot):
         self.bot = bot
 
@@ -31,6 +36,39 @@ class Dice(commands.Cog):
                           f"Result: \n"
                           f"```\n"
                           f"{dice_str}"
+                          f"```")
+
+    @discord.slash_command(
+        name="check",
+        description="Check"
+    )
+    @option("dc", description="Difficulty class", required=False, input_type=int, min_value=1, default=10)
+    @option("side", description="Number of sides", required=False, input_type=int, min_value=1, default=20)
+    @option(
+        "enable_critical",
+        description="Enable critical success/failure",
+        required=False,
+        input_type=bool,
+        default=True
+    )
+    async def dc(
+            self,
+            ctx: discord.ApplicationContext,
+            dc: int,
+            side: int,
+            enable_critical: bool
+    ):
+        die = Dice.Die(side)
+        roll = die.roll()
+
+        result = self.SUCCESS_TEXT if roll >= dc else self.FAILURE_TEXT
+        if enable_critical:
+            result = self.CRITICAL_SUCCESS_TEXT if roll == side else self.CRITICAL_FAILURE_TEXT if roll == 1 else result
+
+        await ctx.respond(f"{result}\n"
+                          f"Result: \n"
+                          f"```\n"
+                          f"{die}"
                           f"```")
 
     class Die:
