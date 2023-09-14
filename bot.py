@@ -6,6 +6,7 @@ import discord
 from discord.ext import commands
 
 from cogs.chat import Chat
+from cogs.dice import Dice
 from cogs.pixiv import Pixiv
 
 CONFIG_NAME: str = "config.json"
@@ -21,6 +22,7 @@ bot = discord.Bot()
 async def on_connect():
     bot.add_cog(Pixiv(bot, REFRESH_TOKEN, os.path.join('.', 'img')))
     bot.add_cog(Chat(bot, API_KEY))
+    bot.add_cog(Dice(bot))
     await bot.sync_commands()
 
 
