@@ -14,7 +14,7 @@ class PixivUtils:
             self,
             refresh_token: str,
             history_size: int = 1000,
-            file_size_limit: int = 8e6,
+            file_size_limit: int = 25e6,
             history_pickle_file: str = "history.pkl"
     ):
         self.refresh_token: str = refresh_token
