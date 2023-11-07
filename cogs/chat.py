@@ -91,3 +91,32 @@ class Chat(commands.Cog):
         )
 
         await ctx.respond(completion.choices[0].message.content)
+
+        @discord.message_command(name='What\'s Funny')
+        async def whats_funny(
+                self,
+                ctx: discord.ApplicationContext,
+                message: discord.Message
+        ):
+            if len(message.attachments) != 1:
+                await ctx.respond('别急')
+                return
+
+            await ctx.defer()
+
+            url = message.attachments[0].url
+            completion = await self.client.chat.completions.create(
+                model='gpt-4-vision-preview',
+                messages=[
+                    {
+                        'role': 'user',
+                        'content': [
+                            {'type': 'text', 'text': "这张图片有什么好笑的"},
+                            {'type': 'image_url', 'image_url': url}
+                        ]
+                    }
+                ],
+                max_tokens=1000
+            )
+
+            await ctx.respond(completion.choices[0].message.content)
