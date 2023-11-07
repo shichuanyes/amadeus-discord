@@ -41,7 +41,7 @@ class Chat(commands.Cog):
                 "content": message
             }
         ]
-        completion = await self.client.chat.completions.create(model="gpt-4", messages=messages)
+        completion = await self.client.chat.completions.create(model="gpt-4-1106-preview", messages=messages)
         response = completion.choices[0].message.content
         messages.append({"role": "assistant", "content": response})
         message: Optional[discord.WebhookMessage] = await ctx.followup.send(response)
@@ -55,7 +55,7 @@ class Chat(commands.Cog):
         if message.reference and message.reference.message_id in self.history:
             messages = json.loads(self.history[message.reference.message_id])
             messages.append({"role": "user", "content": message.content})
-            completion = await self.client.chat.completions.create(model="gpt-4", messages=messages)
+            completion = await self.client.chat.completions.create(model="gpt-4-1106-preview", messages=messages)
             response = completion.choices[0].message.content
             messages.append({"role": "assistant", "content": response})
 
