@@ -96,7 +96,7 @@ class Chat(commands.Cog):
 
         await ctx.defer()
 
-        reply = await ctx.followup.send("Reply to this message to ask about this image")
+        reply = await ctx.followup.send(f"Reply to this message to ask about this image: {message.jump_url}")
 
         url = message.attachments[0].url
         self.vision_history[reply.id] = json.dumps(
