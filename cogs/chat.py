@@ -79,28 +79,19 @@ class Chat(commands.Cog):
             ctx: discord.ApplicationContext,
             message: discord.Message
     ):
-        if len(message.attachments) != 1:
-            await ctx.respond('别急')
-            return
-
         await ctx.defer()
 
         reply = await ctx.followup.send(f"Reply to this message to ask about this image: {message.jump_url}")
 
-        url = message.attachments[0].url
-        self.history[reply.id] = json.dumps(
-            [
+        content = []
+        for attachment in message.attachments:
+            content.append(
                 {
-                    'role': 'user',
-                    'content': [
-                        {
-                            'type': 'image_url',
-                            'image_url': {
-                                'url': url,
-                                'detail': 'high'
-                            }
-                        }
-                    ]
+                    'type': 'image_url',
+                    'image_url': {
+                        'url': attachment.url,
+                        'detail': 'high'
+                    }
                 }
-            ]
-        )
+            )
+        self.history[reply.id] = json.dumps([{'role': 'user', 'content': content}])
