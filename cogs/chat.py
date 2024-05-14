@@ -19,6 +19,8 @@ class Chat(commands.Cog):
             api_key=api_key
         )
 
+        self.model = 'gpt-4o'
+
         print("Loaded cog Chat")
 
     @discord.slash_command(
@@ -42,7 +44,7 @@ class Chat(commands.Cog):
                 "content": message
             }
         ]
-        completion = await self.client.chat.completions.create(model="gpt-4-1106-preview", messages=messages)
+        completion = await self.client.chat.completions.create(model=self.model, messages=messages)
         response = completion.choices[0].message.content
         messages.append({"role": "assistant", "content": response})
         message: Optional[discord.WebhookMessage] = await ctx.followup.send(response)
@@ -53,24 +55,14 @@ class Chat(commands.Cog):
             self,
             message: discord.Message
     ):
-        model: str = ''
-
         if message.reference and message.reference.message_id in self.history:
-            model = 'gpt-4-1106-preview'
             messages = json.loads(self.history[message.reference.message_id])
-            messages.append({"role": "user", "content": message.content})
-
-        if message.reference and message.reference.message_id in self.vision_history:
-            model = 'gpt-4-vision-preview'
-            messages = json.loads(self.vision_history[message.reference.message_id])
-            if len(messages) == 1:
+            if len(messages) == 1 and messages[0]['content'][0]['type'] == 'image_url':
                 messages[0]['content'].insert(0, {'type': 'text', 'text': message.content})
             else:
                 messages.append({"role": "user", "content": message.content})
-
-        if len(model) > 0:
             completion = await self.client.chat.completions.create(
-                model=model,
+                model=self.model,
                 messages=messages,
                 max_tokens=1000
             )
@@ -79,10 +71,7 @@ class Chat(commands.Cog):
 
             for i in range(0, len(response), Chat.MAX_MESSAGE_LENGTH):
                 reply = await message.reply(response[i:i + Chat.MAX_MESSAGE_LENGTH])
-                if model == 'gpt-4-1106-preview':  # Refactor this please
-                    self.history[reply.id] = json.dumps(messages)
-                else:
-                    self.vision_history[reply.id] = json.dumps(messages)
+                self.history[reply.id] = json.dumps(messages)
 
     @discord.message_command(name='Describe Image')
     async def describe_image(
@@ -99,12 +88,18 @@ class Chat(commands.Cog):
         reply = await ctx.followup.send(f"Reply to this message to ask about this image: {message.jump_url}")
 
         url = message.attachments[0].url
-        self.vision_history[reply.id] = json.dumps(
+        self.history[reply.id] = json.dumps(
             [
                 {
                     'role': 'user',
                     'content': [
-                        {'type': 'image_url', 'image_url': url}
+                        {
+                            'type': 'image_url',
+                            'image_url': {
+                                'url': url,
+                                'detail': 'high'
+                            }
+                        }
                     ]
                 }
             ]
