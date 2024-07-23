@@ -19,7 +19,7 @@ class Chat(commands.Cog):
             api_key=api_key
         )
 
-        self.model = 'gpt-4o'
+        self.model = 'gpt-4o-mini'
 
         print("Loaded cog Chat")
 
