@@ -24,7 +24,6 @@ async def on_connect():
     bot.add_cog(Pixiv(bot, REFRESH_TOKEN, os.path.join('.', 'img')))
     bot.add_cog(Chat(bot, API_KEY))
     bot.add_cog(Dice(bot))
-    bot.add_cog(Youtube(bot))
     bot.add_cog(Shuffle(bot))
     await bot.sync_commands()
 
