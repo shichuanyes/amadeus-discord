@@ -16,7 +16,10 @@ TOKEN: str = ""
 REFRESH_TOKEN: str = ""
 API_KEY: str = ""
 
-bot = discord.Bot()
+intents = discord.Intents.default()
+intents.message_content = True
+
+bot = discord.Bot(intents=intents)
 
 
 @bot.event
